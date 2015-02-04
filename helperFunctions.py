@@ -37,15 +37,18 @@ def print_hands(game):
 	for player in game.players:
 		print(player.name + "\t\t"),
 
-	for category, cards in game.deck.items():
+	for category in game.deck.get_categories():
 		print("\n--------{}-------".format(category)),
-		for card in cards:
-			print("\n" + card + "\t"),
-			for player in game.players:
-				if card in player.hand[category]:
-					print(str(player.hand[category][card])+"\t\t"),
-				else:
-					print("?????\t\t"),
+		for card in game.deck:
+			if card.category == category:
+				print("\n{0:>12}\t".format(card.name)),
+				for player in game.players:
+					if card in player.has:
+						print("Have It\t\t"),
+					elif card in player.hasnt:
+						print("Nope   \t\t"),
+					else:
+						print("?????\t\t"),
 
 
 

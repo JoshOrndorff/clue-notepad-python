@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
+#TODO: learn how to make a package and do it for the three class files.
+
 from helperFunctions import *
-from clue import *
+from clueGame import clueGame
+from cluePlayer import cluePlayer
+from clueDeck import clueDeck
 
 clear()
 
@@ -23,16 +27,15 @@ clear()
 
 game = clueGame(playerNames, userPlayer)
 
-userCardCount = game.players[userPlayer].numCards
+userCardCount = game.players[userPlayer].numCards #TODO why is this zero?
 
 while True:
 	userHand = []
 
-	for category in game.deck.keys():
-		for card in game.deck[category]:
-			if len(userHand) < userCardCount:
-				if yn_input("Do you have the {}, {}? ".format(category, card)):
-					userHand.append(card)
+	for card in game.deck:
+		if len(userHand) < userCardCount:
+			if yn_input("Do you have the {}, {}? ".format(card.category, card.name)):
+				userHand.append(card)
 
 	if len(userHand) >= userCardCount:
 		break
@@ -46,7 +49,7 @@ game.set_user_hand(userHand)
 # -------------Keep the guessing going forever-------------------
 while True:
 
-	currentName = game.players[game.currentPlayer].name
+	currentName = game.currentPlayer.name
 	print("It is {}'s turn.".format(currentName))
 	
 	print("1. {} Made a guess.".format(currentName))
@@ -55,7 +58,7 @@ while True:
 	option = int_input("Choose as option: ")
 	
 	if option == 1:
-		pass
+		pass # This code comes later, after the else clause.
 	elif option == 2:
 		game.pass_turn()
 		clear()
@@ -68,9 +71,12 @@ while True:
 	else:
 		raw_input("That isn't a valid option. Press any key to continue... ")
 	
+	
+	# They made a guess
 	guess = []
 	
-	for category in game.deck.keys():
+	# TODO This whole business needs to be reworked
+	for category in game.deck.get_categories():
 		while True:
 			card = raw_input("Which {} did she guess? ".format(category))
 			if card in game.deck[category]:
