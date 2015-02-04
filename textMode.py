@@ -49,24 +49,35 @@ game.set_user_hand(userHand)
 # -------------Keep the guessing going forever-------------------
 while True:
 
+	clear()
+
 	currentName = game.currentPlayer.name
 	print("It is {}'s turn.".format(currentName))
 	
-	print("1. {} Made a guess.".format(currentName))
-	print("2. {} Didn't make a guess.".format(currentName))
-	print("3. Show data table so far.")
-	option = int_input("Choose as option: ")
+	print("1. {} made a guess.".format(currentName))
+	print("2. {} passed his turn.".format(currentName))
+	print("")
+	print("3. Data Table.")
+	print("4. Game History.")
+	print("5. Disproofs.")
+	print("")
+	option = int_input("Choose an option: ")
 	
 	if option == 1:
 		pass # This code comes later, after the else clause.
 	elif option == 2:
 		game.pass_turn()
-		clear()
 		continue
 	elif option == 3:
-		clear()
 		print_hands(game)
 		raw_input("\n\nPress enter to continue... ")
+		continue
+	elif option == 4:
+		print_history(game)
+		raw_input("\n\nPress enter to continue... ")
+		continue
+	elif option == 5:
+		print_disproofs(game)
 		continue
 	else:
 		raw_input("That isn't a valid option. Press any key to continue... ")
@@ -74,29 +85,22 @@ while True:
 	
 	# They made a guess
 	guess = []
-	
-	# TODO This whole business needs to be reworked
-	for category in game.deck.get_categories():
-		while True:
-			card = raw_input("Which {} did she guess? ".format(category))
-			if card in game.deck[category]:
-				guess.append(card)
-				break
-			print("That's not a {}. ".format(category)),
+
+	for category in game.deck.categories:
+		cards = game.deck.get_cards_by_category(category)
+		names = []
+		for card in cards:
+			names.append(card.name)
+		card = int_choice("Which {} did {} guess?".format(category, game.currentPlayer.name), cards, names)
+		guess.append(card)
 			
-	while guess != None:
-		disprover = raw_input("Who had a disproving card? ")
-		if disprover in playerNames:
-			disprover = playerNames.index(disprover)
-			break
-		print("That's not a valid player. "),
+	disprover = int_choice("Who had a disproving card? ", game.players, playerNames)
 			
-	if game.currentPlayer == game.userPlayer and guess != None:
-		while True:
-			card = raw_input("What card did you see? ")
-			if card in game.deck:
-				break
-			print("That's not a card in the deck. "),
+	if game.currentPlayer == game.userPlayer:
+		names = []
+		for card in game.deck:
+			names.append(card.name)
+		cardSeen = int_choice("Which card did you see?", game.deck, names)
 	else:
 		cardSeen = None
 

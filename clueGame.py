@@ -9,12 +9,12 @@ class clueGame(object):
 		numPlayers = len(playerNames)
 
 		# Load the deck
-		with open(deckPath, 'rb') as input:
-			self.deck = load(input)
+		with open(deckPath, 'rb') as deckFile:
+			self.deck = load(deckFile)
 
 		# Determine how many cards each player gets
-		minCardsPerHand = (len(self.deck) - len(self.deck.get_categories())) // numPlayers
-		playersWithExtraCard = (len(self.deck) - len(self.deck.get_categories())) % numPlayers
+		minCardsPerHand = (len(self.deck) - len(self.deck.categories)) // numPlayers
+		playersWithExtraCard = (len(self.deck) - len(self.deck.categories)) % numPlayers
 
 		#Create the players list
 		self.players = []
@@ -39,7 +39,7 @@ class clueGame(object):
 		'''
 		This is a turn when the player does not make it to a room.
 		'''
-		self.history.append({"guesser": self.currentPlayer.name,\
+		self.history.append({"guesser": self.currentPlayer,\
                              "guess": None,\
                          "disprover": None})
 
@@ -66,48 +66,88 @@ class clueGame(object):
 			raise ValueError, "Must specify cardSeen, when another player shows you a card."
 			# Should the cardSeen business be a separate call to new_info?
 
-		self.history.append({"guesser": currentPlayer.name,\
-                             "guess": guess,\
-                         "disprover": disprover.name})
+		self.history.append({"guesser": self.currentPlayer,\
+                             "guess": guess[:],\
+                         "disprover": disprover}) # Slicing guess to copy it.
+
+		# Figure out which players didn't show.
+		numCurrent   = self.players.index(self.currentPlayer)
+		numDisprover = self.players.index(disprover)
+		if numCurrent < numDisprover:
+			noShows = self.players[numCurrent + 1 : numDisprover]
+		else:
+			# This case also works when the guesser is the disprover
+			noShows = self.players[: numDisprover] + self.players[numCurrent + 1 :]
+
+		# Players who didn't show, should not have any of the guessed cards.
+		for player in noShows:
+			for card in guess:
+				self.new_info(player, card, False)
+
 		
 		# When user sees a card note it.
 		if cardSeen != None:
 			self.new_info(disprover, cardSeen, True)
 
-		self.next_player()
-
-		# Add to disprover's disproof list unless he's known to have a card.
-		
-		if card not in disprover.has:
+		# User didn't see a specific card, so add to disprover's disproof list.
+		else:
 			# Remove any cards with known locations from the guess first.
+			import ipdb; ipdb.set_trace()
 			for player in self.players:
 				for card in player.has:
 					if card in guess:
 						guess.remove(card)
-			self.players[disprover].disproofs.append(guess)
+			# And if any cards remain in the guess, add it to the disproofs list
+			if len(guess) > 0:
+				disprover.disproofs.append(guess)	
 
-		# Players who didn't show, do not have any of the cards
-		for player in self.players:
-			if player == disprover:
-				break
-			for card in guess:
-				self.new_info(player, card, False)		
-
-		self.optimize() # Perhaps this should be moved to the new_info function
+		self.optimize()
+		self.next_player()
 
 	def optimize(self):
 		'''Checks for completed process of elimination results
 		And also does other general maintenance'''
-
-		#TODO: Make this work
 		
 		changes = False
+
+		for player in self.players:		
+			# If a player is known to have the correct number of cards, 
+			# he does not have any other cards.
+			if len(player.has) == player.numCards:
+				for card in self.deck:
+					if card not in player.has and card not in player.hasnt:
+						self.new_info(player, card, False)
 		
-		# If a player is known to have the correct number of cards, all other cards can be False.
+			# If a player is known to be without the maximum number of cards,
+			# he has all remaining unknown cards.
+			elif len(self.deck) - len(player.hasnt) -len(self.deck.categories) == player.numCards:
+				for card in self.sdeck:
+					if card not in player.has and card not in player.hasnt:
+						self.new_info(player, card, True)
+
+			# Any disproofs of length 1 are now known information.
+			for disproof in player.disproofs:
+				if len(disproof) == 1: # If any disproofs contain only one card
+					self.new_info(player, disproof[0], True)
+					player.disproofs.remove(disproof)
+
+		# Do I need to loop through all cards with known locations and remove them from
+		# disproofs? Or is it impossible for them to have gotten there in the first place.
+		# No, I don't. Whenever a card location is learned it is removed from all existing disproofs.
 		
-		# If a player is known to not have the maximum number of cards, all other cards can be True.
-		
-		# Do some sanity checks. eg. at least one card in each category is not in the hands.
+		# Sanity Check: At least one card in each category is not in the hands.
+		# TODO: After the program is known to work, move this to the else clause
+		# of the recursive call so it is only run once per turn (to help performance).
+		for category in self.deck.categories:
+			for card in self.deck.get_cards_by_category(category):
+				allFoundSoFar = True
+				for player in self.players:
+					if card in player.has:
+						break
+					else:
+						allFoundSoFar = False
+			if allFoundSoFar:
+				raise ValueError, "All cards in {} category are known to be in players' hands."
 		
 		# Finally, the recursive call
 		if changes:
@@ -125,22 +165,20 @@ class clueGame(object):
 
 		if type(has) != bool:
 			raise TypeError, "Argument, has, must be Boolean (True or False)."
-		
-		# Now add the info
+
 		if has: # Player has the card
 			for currentPlayer in self.players: # All other players don't have it
 				if currentPlayer != self.userPlayer:
 					currentPlayer.hasnt.append(card)
 			player.has.append(card)
+		#TODO When we find out where a card is, we remove it from all other players' disproofs.
+		#TODO Also remove all disproofs containing the card from the players hand.
 			
 		else: # Player doesn't have card
 			player.hasnt.append(card)
-			for disproof in self.players[player].disproofs: # Remove it from his previous disproofs
+			for disproof in player.disproofs: # Remove it from his previous disproofs
 				if card in disproof:
 					disproof.remove(card)
-					if len(disproof) == 1: # If any disproofs contain only one card
-						self.new_info(player, card, True)
-
 
 	def set_user_hand(self, cards):
 		'''
@@ -150,6 +188,8 @@ class clueGame(object):
 		'''
 		for card in cards:
 			self.new_info(self.userPlayer, card, True)
+
+		self.optimize()
 
 	def next_player(self):
 		'''

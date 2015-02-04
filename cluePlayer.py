@@ -11,4 +11,3 @@ class cluePlayer(object):
 		self.has = clueDeck() # Cards the player has
 		self.hasnt = clueDeck() # Cards the player doesn't have
 
-
