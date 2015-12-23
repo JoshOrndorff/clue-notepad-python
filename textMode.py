@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
-#TODO: learn how to make a package and do it for the three class files.
-
 from helperFunctions import *
-from clueGame import clueGame
-from cluePlayer import cluePlayer
-from clueDeck import clueDeck
+from cluePackage import *
+from os.path import isfile
 
 clear()
 
@@ -21,13 +18,19 @@ while True:
 		break
 	playerNames.append(name)
 
-print("For this game we will be using the standard deck.") #TODO allow using a nonstandard deck.
-raw_input("Press Enter to continue...")
+if yn_input("Would you like to use the standard deck? "):
+	deck = "standard.deck"
+else:
+	deck = ""
+	while not isfile(deck):
+		deck = raw_input("Please type the path to your custom deck: ")
+		# This works because the screen will be cleared immediately if the path is good.
+		print("\nSorry, that's not a valid path, please try again.")
 clear()
 
-game = clueGame(playerNames, userPlayer)
+game = clueGame(playerNames, userPlayer, deck)
 
-userCardCount = game.players[userPlayer].numCards #TODO why is this zero?
+userCardCount = game.players[userPlayer].numCards
 
 while True:
 	userHand = []
@@ -98,9 +101,9 @@ while True:
 			
 	if game.currentPlayer == game.userPlayer:
 		names = []
-		for card in game.deck:
+		for card in guess:
 			names.append(card.name)
-		cardSeen = int_choice("Which card did you see?", game.deck, names)
+		cardSeen = int_choice("Which card did you see?", guess, names)
 	else:
 		cardSeen = None
 

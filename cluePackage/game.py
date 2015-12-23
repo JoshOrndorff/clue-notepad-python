@@ -1,5 +1,6 @@
 from cPickle import load
-from cluePlayer import cluePlayer
+from player import cluePlayer
+from deck import clueDeck
 
 class clueGame(object):
 
@@ -27,7 +28,7 @@ class clueGame(object):
 		if numUserPlayer >= 0 and numUserPlayer < numPlayers:
 			self.userPlayer = self.players[numUserPlayer]
 		else:
-			raise ValueError, "userPlayer must be between 0 and number of players (currently {}.".format(numPlayers)
+			raise ValueError("userPlayer must be between 0 and number of players (currently {}).".format(numPlayers))
 
 		# Final initializing
 		self.currentPlayer = self.players[0]
@@ -61,10 +62,36 @@ class clueGame(object):
 
 		# Ensure arguments are compatible
 		if self.currentPlayer != self.userPlayer and cardSeen != None:
-			raise ValueError, "Cannot specify cardSeen unless it is users turn to guess."
+			raise ValueError("Cannot specify cardSeen unless it is users turn to guess.")
 		if self.currentPlayer == self.userPlayer and disprover != self.currentPlayer and cardSeen == None:
-			raise ValueError, "Must specify cardSeen, when another player shows you a card."
-			# Should the cardSeen business be a separate call to new_info?
+			raise ValueError("Must specify cardSeen, when another player shows you a card.")
+
+		# Ensure guess contains one card from each category
+		if not len(guess) == len(self.deck.categories):
+			raise ValueError("Guess must contain the same number of cards as categories in the deck.")
+		for category in self.deck.categories:
+			cards = self.deck.get_cards_by_category(category)
+			categoryOK = False
+			for card in guess:
+				if card in cards:
+					categoryOK = True
+					break
+			if not categoryOK:
+				raise ValueError("Guess must contain one card from each category.")
+
+		# Make sure nobody (except maybe the disprover) has the cardSeen.
+		for otherPlayer in self.players:
+			if otherPlayer != disprover:
+				for testCard in otherPlayer.has:
+					if cardSeen == testCard:
+						raise ConflictingDataError("{} showed {}, but it is known to be in {}'s hand.".format(disprover.name, card.name, otherPlayer.name))
+
+		# When user sees a card note it.
+		if cardSeen != None:
+			self.new_info(disprover, cardSeen, True)
+
+
+		# Should the cardSeen business (Everything until now) be a separate call to new_info?
 
 		self.history.append({"guesser": self.currentPlayer,\
                              "guess": guess[:],\
@@ -84,15 +111,9 @@ class clueGame(object):
 			for card in guess:
 				self.new_info(player, card, False)
 
-		
-		# When user sees a card note it.
-		if cardSeen != None:
-			self.new_info(disprover, cardSeen, True)
-
 		# User didn't see a specific card, so add to disprover's disproof list.
 		else:
 			# Remove any cards with known locations from the guess first.
-			import ipdb; ipdb.set_trace()
 			for player in self.players:
 				for card in player.has:
 					if card in guess:
@@ -120,8 +141,8 @@ class clueGame(object):
 		
 			# If a player is known to be without the maximum number of cards,
 			# he has all remaining unknown cards.
-			elif len(self.deck) - len(player.hasnt) -len(self.deck.categories) == player.numCards:
-				for card in self.sdeck:
+			elif len(self.deck) - len(player.hasnt) - len(self.deck.categories) == player.numCards:
+				for card in self.deck:
 					if card not in player.has and card not in player.hasnt:
 						self.new_info(player, card, True)
 
@@ -129,7 +150,6 @@ class clueGame(object):
 			for disproof in player.disproofs:
 				if len(disproof) == 1: # If any disproofs contain only one card
 					self.new_info(player, disproof[0], True)
-					player.disproofs.remove(disproof)
 
 		# Do I need to loop through all cards with known locations and remove them from
 		# disproofs? Or is it impossible for them to have gotten there in the first place.
@@ -139,15 +159,15 @@ class clueGame(object):
 		# TODO: After the program is known to work, move this to the else clause
 		# of the recursive call so it is only run once per turn (to help performance).
 		for category in self.deck.categories:
+			allFoundSoFar = True
 			for card in self.deck.get_cards_by_category(category):
-				allFoundSoFar = True
 				for player in self.players:
 					if card in player.has:
 						break
 					else:
 						allFoundSoFar = False
 			if allFoundSoFar:
-				raise ValueError, "All cards in {} category are known to be in players' hands."
+				raise ConflictingDataError("All cards in {} category are known to be in players' hands.".format(category))
 		
 		# Finally, the recursive call
 		if changes:
@@ -155,28 +175,54 @@ class clueGame(object):
 
 	def new_info(self, player, card, has):
 		'''
-		Updates all players' hands when new information is discovered. Generally
-		this method is only used internally.
+		Updates all players' hands and disproofs when new information is
+		discovered. Generally this method is only used internally.
+
+		Processing that can be completed in one pass goes here. Processing that
+		must happen recursively should go in optimize.
 		
 		Also for specifying additional information manually that does not come up
 		during regular game play. For example if a card is turned up by accident,
 		or there is table talk during the game.
 		'''
 
-		if type(has) != bool:
-			raise TypeError, "Argument, has, must be Boolean (True or False)."
+		# TODO add a force argument in case the user is correcting invalid data
+		# becuase, for example, a player forgot to show a card.
 
-		if has: # Player has the card
-			for currentPlayer in self.players: # All other players don't have it
-				if currentPlayer != self.userPlayer:
-					currentPlayer.hasnt.append(card)
+		if type(has) != bool:
+			raise TypeError("Argument, has, must be Boolean (True or False).")
+
+		# Player has the card
+		if has:
 			player.has.append(card)
-		#TODO When we find out where a card is, we remove it from all other players' disproofs.
-		#TODO Also remove all disproofs containing the card from the players hand.
-			
-		else: # Player doesn't have card
+
+			# All other players don't have it
+			for otherPlayer in self.players:
+				if otherPlayer != player:
+
+					# Sanity Check
+					if card in otherPlayer.has:
+						raise ConflictingDataError("{} was just found not to have {}, but it is already listed in his had.".format(otherPlayer.name, card.name))
+
+					# Don't have it in their hands
+					otherPlayer.hasnt.append(card)
+
+					# Don't have it in their disproofs
+					for disproof in otherPlayer.disproofs:
+						if card in disproof:
+							disproof.remove(card)
+
+			# Remove all disproofs containing the card from the players hand.
+			for disproof in player.disproofs:
+				if card in disproof:
+					player.disproofs.remove(disproof)
+
+		# Player doesn't have card
+		else:
 			player.hasnt.append(card)
-			for disproof in player.disproofs: # Remove it from his previous disproofs
+
+			# Remove it from his previous disproofs
+			for disproof in player.disproofs:
 				if card in disproof:
 					disproof.remove(card)
 
@@ -198,4 +244,16 @@ class clueGame(object):
 		numCurrentPlayer = self.players.index(self.currentPlayer)
 		numNextPlayer = (numCurrentPlayer +1) % len(self.players)
 		self.currentPlayer = self.players[numNextPlayer]
+
+
+
+class ConflictingDataError(Exception):
+	'''
+	Clue specific exception that is raised whenever conflicting data is found in
+	hands or anywhere else. Ideally once the program is stable, this will only
+	happen when the user inputs invalid data, or a player makes a mistake.
+
+	In the meantime, it can also help find bugs in the program.
+	'''
+	pass
 

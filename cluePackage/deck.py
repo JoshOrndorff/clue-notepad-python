@@ -12,16 +12,26 @@ class clueDeck(list):
 		For custom decks, adds a category of cards (eg. weapon, room. etc) and
 		the cards that go in that category.
 		'''
-		
-		if type(category) != str:
-			raise TypeError, "Category must be a string"
 
-		for name in names:
-			if type(name) != str:
-				raise TypeError, "Each card must be a string"
-			self.append(clueCard(category, name))
+		if category in self.categories:
+			raise ValueError, "Category already exists in deck."
+		elif type(category) != str:
+			raise TypeError, "Category must be a string."
 
 		self.categories.append(category)
+
+		for name in names:
+			self.add_card(category, name)
+
+	def add_card(self, category, name):
+		if category not in self.categories:
+			raise ValueError, "Not a valid category. Add category first."
+
+		if type(name) != str:
+			raise TypeError, "Each card name must be a string"
+
+		self.append(clueCard(category, name))
+
 
 	def get_cards_by_category(self, category):
 		'''
@@ -46,19 +56,4 @@ class clueCard(object):
 	def __init__(self, category, name):
 		self.category = str(category)
 		self.name = str(name)
-
-# Temporary code to make standard deck
-if __name__ == "__main__":
-	deck = clueDeck()
-
-	deck.add_category("Weapon", ["Knife", "Lead Pipe", "Wrench", "Revolver",\
-	                             "Rope", "Candlestick"])
-	deck.add_category("Room", ["Hall", "Ball Room", "Billiard Room", "Lounge",\
-	                           "Library", "Conservatory", "Kitchen",\
-	                           "Dining Room", "Study"])
-	deck.add_category("Suspect", ["Mr. Green", "Col. Mustard", "Prof. Plum",\
-	                              "Miss Scarlet", "Ms. White", "Mrs. Peacock"])
-	deck.save("standard.deck")
-
-
 

@@ -9,13 +9,14 @@ def int_input(prompt, min = None, max = None):
 	try:
 		answer = int(answer)
 	except ValueError:
-		int_input("That isn't a integer dude, please try again. ", min, max)
+		answer = int_input("That isn't a integer dude, please try again. ", min, max)
 
 	while min and answer < min:
-		int_input("Number must be at least {}. ".format(min), min, max)
+		answer = int_input("Number must be at least {}. ".format(min), min, max)
 
 	while max and answer > max:
-		int_input("Number must not be more than {}. ".format(max), min, max)
+		answer = int_input("Number must not be more than {}. ".format(max), min, max)
+
 	return answer
 
 def yn_input(prompt):
@@ -29,7 +30,7 @@ def yn_input(prompt):
 	elif answer in ["no", "n"]:
 		return False
 	else:
-		yn_input("Please type yes, no, y, or n. ")
+		return yn_input("Please type yes, no, y, or n. ")
 
 def clear():
 	''' Simple cross-platform screen clearing function'''
@@ -58,22 +59,22 @@ def print_hands(game):
 	'''
 
 	# Print the title row
-	print(" " * 12 + "\t"),
+	print(" " * 13 + "\t"),
 	for player in game.players:
-		print(player.name + "\t\t"),
+		print("{0:>13}".format(player.name)),
 
 	for category in game.deck.categories:
 		print("\n--------{}-------".format(category)),
 		for card in game.deck:
 			if card.category == category:
-				print("\n{0:>12}\t".format(card.name)),
+				print("\n{0:>13}\t".format(card.name)),
 				for player in game.players:
 					if card in player.has:
-						print("Have It\t\t"),
+						print("{0:>13}".format("  Have It ")),
 					elif card in player.hasnt:
-						print("Nope   \t\t"),
+						print("{0:>13}".format("Don't Have")),
 					else:
-						print("???????\t\t"),
+						print("{0:>13}".format("?-?-?-?-?-")),
 
 def print_history(game):
 	'''
@@ -87,7 +88,7 @@ def print_history(game):
 
 	for turn in game.history:
 		if turn["guess"] == None: # Passed turn
-			print("{} passed his turn.".format(turn["guesser"].name))
+			print("{} passed.".format(turn["guesser"].name))
 
 		elif turn["disprover"] != None: # Normal turn
 			print("{} guessed [{}, {}, {}] and {} showed a card.".format(\
@@ -120,10 +121,4 @@ def print_disproofs(game):
 				print("{0:>12}\t".format(card.name)),
 			print("")
 		raw_input("Press enter to continue...")
-
-
-
-
-
-
 

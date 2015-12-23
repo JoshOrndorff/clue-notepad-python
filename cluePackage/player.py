@@ -1,4 +1,4 @@
-from clueDeck import clueDeck
+from deck import clueDeck
 
 class cluePlayer(object):
 	'''Represents a player in the clue game.'''
