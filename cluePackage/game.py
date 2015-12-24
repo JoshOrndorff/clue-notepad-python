@@ -86,16 +86,28 @@ class clueGame(object):
 					if cardSeen == testCard:
 						raise ConflictingDataError("{} showed {}, but it is known to be in {}'s hand.".format(disprover.name, card.name, otherPlayer.name))
 
+    # Add an entry to the game history
+		self.history.append({"guesser": self.currentPlayer,\
+                             "guess": guess[:],\
+                         "disprover": disprover}) # Slicing guess to copy it.
+
 		# When user sees a card note it.
 		if cardSeen != None:
 			self.new_info(disprover, cardSeen, True)
 
-
-		# Should the cardSeen business (Everything until now) be a separate call to new_info?
-
-		self.history.append({"guesser": self.currentPlayer,\
-                             "guess": guess[:],\
-                         "disprover": disprover}) # Slicing guess to copy it.
+		# User didn't see a specific card, so add to disprover's disproof list.
+		else:
+			# Remove any cards with known locations (other than disprover's hand) from the guess first.
+			for player in self.players:
+			  if player != disprover:
+				  for card in player.has:
+				  	if card in guess:
+				  		guess.remove(card)
+			# If the disprover is not already known to have any of the guessed cards
+			if not bool(set(guess) & set(disprover.has)):
+			  # Stole this intersection code from: http://stackoverflow.com/a/3170067/4184410
+			  # Add the guess to the disproofs list
+				disprover.disproofs.append(guess)
 
 		# Figure out which players didn't show.
 		numCurrent   = self.players.index(self.currentPlayer)
@@ -111,17 +123,6 @@ class clueGame(object):
 			for card in guess:
 				self.new_info(player, card, False)
 
-		# User didn't see a specific card, so add to disprover's disproof list.
-		else:
-			# Remove any cards with known locations from the guess first.
-			for player in self.players:
-				for card in player.has:
-					if card in guess:
-						guess.remove(card)
-			# And if any cards remain in the guess, add it to the disproofs list
-			if len(guess) > 0:
-				disprover.disproofs.append(guess)	
-
 		self.optimize()
 		self.next_player()
 
@@ -129,6 +130,7 @@ class clueGame(object):
 		'''Checks for completed process of elimination results
 		And also does other general maintenance'''
 		
+		# Flag used to determine whether to make recursive optimization call.
 		changes = False
 
 		for player in self.players:		
