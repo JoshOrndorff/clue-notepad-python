@@ -12,11 +12,12 @@ class clueDeck(list):
 		For custom decks, adds a category of cards (eg. weapon, room. etc) and
 		the cards that go in that category.
 		'''
+		#TODO No need to allow adding cards here. That could be separate calls to add_card.
 
 		if category in self.categories:
-			raise ValueError, "Category already exists in deck."
+			raise ValueError("Category, {}, already exists in deck.".format(category))
 		elif type(category) != str:
-			raise TypeError, "Category must be a string."
+			raise TypeError("Category must be a string.")
 
 		self.categories.append(category)
 
@@ -38,7 +39,7 @@ class clueDeck(list):
 		Returns a list of all cards of a certain category
 		'''
 		if category not in self.categories:
-			raise ValueError, "Not a valid category."
+			raise ValueError("{} is not a valid category.".format(category))
 
 		cards = []
 

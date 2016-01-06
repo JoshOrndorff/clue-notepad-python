@@ -53,7 +53,15 @@ def int_choice(prompt, choices, texts = None):
   return choices[numAnswer]
   
 def explain_guessing():
-  print("Explanation is not yet implemented. Sorry. Good Luck.")
+  print("Guess by typing a card from each category separated by spaces.")
+  print("For example, using the standard deck, you could type:")
+  print("Hall, Scarlet, Conservatory")
+  print("")
+  print("Guesses are not case sensative and can be entered in any order.")
+  print("\"Study Knife Plum\" is equivalent to \"knife PLUM Study\".")
+  print("")
+  print("You must only type enough characters to uniquely specify each card.")
+  print("\"hal mus cand\" is equivalent to \"Hall Mustard Candlestick\".")
 
 def print_hands(game):
   '''
