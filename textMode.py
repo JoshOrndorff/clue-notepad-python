@@ -22,7 +22,7 @@ while True:
 
 # Choose the deck
 if yn_input("Would you like to use the standard deck? "):
-  deck = "standard.deck"
+  deck = None
 else:
   deck = ""
   while not isfile(deck):
