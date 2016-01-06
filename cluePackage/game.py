@@ -1,15 +1,20 @@
 from cPickle import load
+from os.path import dirname, sep
 from player import cluePlayer
 from deck import clueDeck
 
 class clueGame(object):
 
-  def __init__(self, playerNames, numUserPlayer, deckPath = "standard.deck"):
+  def __init__(self, playerNames, numUserPlayer, deckPath = None):
 
     #Calculate the number of players
     numPlayers = len(playerNames)
 
     # Load the deck
+    if deckPath == None:
+      directory = dirname(__file__)
+      deckPath = directory + sep + "standard.deck"
+      
     with open(deckPath, 'rb') as deckFile:
       self.deck = load(deckFile)
 
@@ -258,6 +263,13 @@ class clueGame(object):
     numNextPlayer = (numCurrentPlayer +1) % len(self.players)
     self.currentPlayer = self.players[numNextPlayer]
 
+class Turn(object):
+  '''Represents a single turn in the game.'''
+  def __init__(self, guesser, guess, disprover, cardSeen = None):
+    self.guesser = guesser
+    self.guess = guess
+    self.disprover = disprover
+    self.cardSeen = cardSeen
 
 
 class ConflictingDataError(Exception):
