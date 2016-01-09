@@ -1,7 +1,6 @@
-from cPickle import load
-from os.path import dirname, sep
+from os.path import dirname, join
 from player import cluePlayer
-from deck import clueDeck
+from deck import *
 
 class clueGame(object):
 
@@ -12,11 +11,9 @@ class clueGame(object):
 
     # Load the deck
     if deckPath == None:
-      directory = dirname(__file__)
-      deckPath = directory + sep + "standard.deck"
-      
-    with open(deckPath, 'rb') as deckFile:
-      self.deck = load(deckFile)
+      self.deck = get_standard_deck()
+    else:
+      self.deck = clueDeck(deckPath)
 
     # Determine how many cards each player gets
     minCardsPerHand = (len(self.deck) - len(self.deck.categories)) // numPlayers
@@ -282,3 +279,6 @@ class ConflictingDataError(Exception):
   '''
   pass
 
+if __name__ == "__main__":
+  myGame = clueGame(["p1","p2","p3"], 1)
+  print(myGame.deck[0].name)

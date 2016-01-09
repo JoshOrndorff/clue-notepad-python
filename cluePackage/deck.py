@@ -1,11 +1,24 @@
-from cPickle import dump
+import xml.etree.ElementTree as ET
 
 class clueDeck(list):
   '''
   Represents a deck of cards in the clue game.
   '''
-  def __init__(self):
+  def __init__(self, deckPath = None):
     self.categories = []
+    
+    if deckPath == None: # Creating a new blank deck
+      return
+      
+    # Try to read a deck XML file
+    with open(deckPath, 'r') as deckFile:
+      deckTree = ET.parse(deckFile)
+      
+      for categoryElement in deckTree.findall('category'):
+        self.add_category(categoryElement.get('name'))
+        for cardElement in categoryElement.findall('card'):
+          self.add_card(categoryElement.get('name'), cardElement.text)
+    
 
   def add_category(self, category):
     '''Adds a category of cards (eg. weapon, room, etc) to a new deck.'''
@@ -44,8 +57,24 @@ class clueDeck(list):
     return cards
 
   def save(self, path):
+  
+    '''Saves a deck to an XML file for later use'''
+  
+    deckElement = ET.Element('deck')
+    
+    for category in self.categories:
+      categoryElement = ET.Element('category')
+      categoryElement.set('name', category)
+      deckElement.append(categoryElement)
+      
+      for card in self.get_cards_by_category(category):
+        cardElement = ET.Element('card')
+        cardElement.text = card.name
+        categoryElement.append(cardElement)        
+    
+    # Write the file
     with open(path, 'wb') as output:
-      dump(self, output, -1)
+      ET.ElementTree(deckElement).write(path)
 
 class clueCard(object):
 
@@ -53,7 +82,7 @@ class clueCard(object):
     self.category = str(category)
     self.name = str(name)
 
-def make_standard_deck():
+def get_standard_deck():
   sd = clueDeck()
   
   sd.add_category("Room")
@@ -83,4 +112,5 @@ def make_standard_deck():
   sd.add_card("Suspect", "Col. Mustard")
   sd.add_card("Suspect", "Mrs. White")
 
-  sd.save('standard.deck')
+  return sd
+

@@ -22,17 +22,17 @@ while True:
 
 # Choose the deck
 if yn_input("Would you like to use the standard deck? "):
-  deck = None
+  deckPath = None
 else:
-  deck = ""
+  deckPath = ""
   while not isfile(deck):
-    deck = raw_input("Please type the path to your custom deck: ")
+    deckPath = raw_input("Please type the path to your custom deck: ")
     # This works because the screen is cleared immediately if the path is good.
     print("\nSorry, that's not a valid path, please try again.")
 clear()
 
 # Create the game object
-game = clueGame(playerNames, userPlayer, deck)
+game = clueGame(playerNames, userPlayer, deckPath)
 
 
 # Figure out which cards are in the user's hand.
