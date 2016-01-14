@@ -1,6 +1,6 @@
-from os.path import dirname, join
 from player import cluePlayer
 from deck import *
+import xml.etree.ElementTree as ET
 
 class clueGame(object):
 
@@ -19,7 +19,7 @@ class clueGame(object):
     minCardsPerHand = (len(self.deck) - len(self.deck.categories)) // numPlayers
     playersWithExtraCard = (len(self.deck) - len(self.deck.categories)) % numPlayers
 
-    #Create the players list
+    # Create the players list
     self.players = []
     
     for i in range(len(playerNames)):
@@ -42,8 +42,9 @@ class clueGame(object):
     This is a turn when the player does not make it to a room.
     '''
     self.history.append({"guesser": self.currentPlayer,\
-                             "guess": None,\
-                         "disprover": None})
+                           "guess": None,\
+                       "disprover": None,\
+                        "cardSeen": None})
 
     self.next_player()
     
@@ -87,10 +88,11 @@ class clueGame(object):
           if cardSeen == testCard:
             raise ConflictingDataError("{} showed {}, but it is known to be in {}'s hand.".format(disprover.name, card.name, otherPlayer.name))
 
-    # Add an entry to the game history
+    # Add an entry to the game history (Slicing guess to copy it)
     self.history.append({"guesser": self.currentPlayer,\
-                             "guess": guess[:],\
-                         "disprover": disprover}) # Slicing guess to copy it.
+                           "guess": guess[:],\
+                       "disprover": disprover,\
+                        "cardSeen": cardSeen})
 
     # When user sees a specific card note it.
     if cardSeen != None:
@@ -163,8 +165,8 @@ class clueGame(object):
       for player in self.players:
         if card not in player.hasnt:
           inSolution = False
-      if inSolution and card not in self.Solution:
-        self.Solution.append(card)          
+      if inSolution and card not in self.solution:
+        self.solution.append(card)          
 
     # Do I need to loop through all cards with known locations and remove them from
     # disproofs? Or is it impossible for them to have gotten there in the first place.
@@ -259,15 +261,55 @@ class clueGame(object):
     numCurrentPlayer = self.players.index(self.currentPlayer)
     numNextPlayer = (numCurrentPlayer +1) % len(self.players)
     self.currentPlayer = self.players[numNextPlayer]
-
-class Turn(object):
-  '''Represents a single turn in the game.'''
-  def __init__(self, guesser, guess, disprover, cardSeen = None):
-    self.guesser = guesser
-    self.guess = guess
-    self.disprover = disprover
-    self.cardSeen = cardSeen
-
+    
+  def export(self, gamePath):
+    '''
+      Saves current game state to a file to be restored later.
+    '''
+    
+    gameElement = ET.Element('game')
+    
+    # Export Players
+    playersElement = ET.Element('players')
+    for player in self.players:
+      playerElement = ET.Element('player')
+      playerElement.text = player.name
+      if player is self.userPlayer:
+        playerElement.set('user', 'True')
+      playersElement.append(playerElement)
+    gameElement.append(playersElement)
+    
+    # Export Deck
+    gameElement.append(self.deck.export())
+    
+    # Export hand
+    handElement = self.userPlayer.has.export()
+    handElement.tag = 'userhand'
+    gameElement.append(handElement)
+    
+    # Export Turns
+    historyElement = ET.Element('history')
+    for turn in self.history: #TODO Presumably manual calls to new_info should get some kind of entry in history
+      turnElement = ET.Element('turn')
+      for key, value in turn.items():
+        pairElement = ET.Element(key)
+        if value is not None:
+          if key == 'guess':
+            for card in value:
+              cardElement = ET.Element('card')
+              cardElement.text = card.name
+              pairElement.append(cardElement)
+          else:
+            # same .name syntax works for guesser, disprover, and card
+            pairElement.text = value.name
+        turnElement.append(pairElement)
+      historyElement.append(turnElement)
+    gameElement.append(historyElement)
+    
+    # Write the file
+    with open(gamePath, 'w'):
+      ET.ElementTree(gameElement).write(gamePath)
+    
 
 class ConflictingDataError(Exception):
   '''
@@ -279,6 +321,17 @@ class ConflictingDataError(Exception):
   '''
   pass
 
-if __name__ == "__main__":
-  myGame = clueGame(["p1","p2","p3"], 1)
-  print(myGame.deck[0].name)
+def import_game(gamePath):
+  '''
+  Returns a game which is restored from a file.
+  '''
+  pass  
+  # As we're reading the file in we should store a dict (not list) of players
+  # So that when we are recreating the game history, we can reference the players by string name.
+  # Do likewise for cards by NAME
+  
+  
+  
+  
+  
+  

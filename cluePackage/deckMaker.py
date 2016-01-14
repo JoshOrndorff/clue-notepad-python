@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import wx
-from deck import clueDeck
+from deck import *
 
 class DeckMakerFrame(wx.Frame):
 
@@ -22,7 +22,7 @@ class DeckMakerFrame(wx.Frame):
     self.categoryPanel.btnAdd.Bind(wx.EVT_BUTTON, self.on_add_category)
     self.cardPanel    .btnAdd.Bind(wx.EVT_BUTTON, self.on_add_card)
     self.categoryPanel.txtNew.Bind(wx.EVT_TEXT_ENTER, self.on_add_category)
-    self.cardPanel.txtNew.Bind(wx.EVT_TEXT_ENTER, self.on_add_card)
+    self.cardPanel    .txtNew.Bind(wx.EVT_TEXT_ENTER, self.on_add_card)
     self.categoryPanel.list  .Bind(wx.EVT_LISTBOX, self.on_category_changed)
 
     panelsSizer.Add(self.categoryPanel, 1, wx.ALL, border = 3)
@@ -51,7 +51,7 @@ class DeckMakerFrame(wx.Frame):
     saveSizer = wx.BoxSizer(wx.HORIZONTAL)
 
     self.txtPath = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
-    self.txtPath.SetValue("myDeck.deck")
+    self.txtPath.SetValue("myDeck.deck.xml")
     self.txtPath.Bind(wx.EVT_TEXT_ENTER, self.on_done)
     saveSizer.Add(self.txtPath, 3, flag = wx.ALL | wx.EXPAND, border = 3)
 
@@ -82,61 +82,52 @@ class DeckMakerFrame(wx.Frame):
     clickedButton = e.GetEventObject()
 
     if   clickedButton == self.btnWeapon:
-      self.deck.add_category("Weapon")
-      self.deck.add_card("Weapon", "Knife")
-      self.deck.add_card("Weapon", "Lead Pipe")
-      self.deck.add_card("Weapon", "Wrench")
-      self.deck.add_card("Weapon", "Revolver")
-      self.deck.add_card("Weapon", "Rope")
-      self.deck.add_card("Weapon", "Candlestick")
+      self.deck.append(clueCard("Weapon", "Knife"))
+      self.deck.append(clueCard("Weapon", "Lead Pipe"))
+      self.deck.append(clueCard("Weapon", "Wrench"))
+      self.deck.append(clueCard("Weapon", "Revolver"))
+      self.deck.append(clueCard("Weapon", "Rope"))
+      self.deck.append(clueCard("Weapon", "Candlestick"))
       self.categoryPanel.list.InsertItems(["Weapon"], 0)
       
     elif clickedButton == self.btnSuspect:
-      self.deck.add_category("Suspect")
-      self.deck.add_card("Suspect", "Mr. Green")
-      self.deck.add_card("Suspect", "Col. Mustard")
-      self.deck.add_card("Suspect", "Prof. Plum")
-      self.deck.add_card("Suspect", "Miss Scarlet")
-      self.deck.add_card("Suspect", "Ms. White")
-      self.deck.add_card("Suspect", "Mrs. Peacock")
+      self.deck.append(clueCard("Suspect", "Mr. Green"))
+      self.deck.append(clueCard("Suspect", "Col. Mustard"))
+      self.deck.append(clueCard("Suspect", "Prof. Plum"))
+      self.deck.append(clueCard("Suspect", "Miss Scarlet"))
+      self.deck.append(clueCard("Suspect", "Ms. White"))
+      self.deck.append(clueCard("Suspect", "Mrs. Peacock"))
       self.categoryPanel.list.InsertItems(["Suspect"], 0)
       
     elif clickedButton == self.btnRoom:
-      self.deck.add_category("Room")
-      self.deck.add_card("Room", "Hall")
-      self.deck.add_card("Room", "Ball Room")
-      self.deck.add_card("Room", "Billiard Room")
-      self.deck.add_card("Room", "Lounge")
-      self.deck.add_card("Room", "Library")
-      self.deck.add_card("Room", "Conservatory")
-      self.deck.add_card("Room", "Kitchen")
-      self.deck.add_card("Room", "Dining Room")
-      self.deck.add_card("Room", "Study")
+      self.deck.append(clueCard("Room", "Hall"))
+      self.deck.append(clueCard("Room", "Ball Room"))
+      self.deck.append(clueCard("Room", "Billiard Room"))
+      self.deck.append(clueCard("Room", "Lounge"))
+      self.deck.append(clueCard("Room", "Library"))
+      self.deck.append(clueCard("Room", "Conservatory"))
+      self.deck.append(clueCard("Room", "Kitchen"))
+      self.deck.append(clueCard("Room", "Dining Room"))
+      self.deck.append(clueCard("Room", "Study"))
       self.categoryPanel.list.InsertItems(["Room"], 0)
 
     self.categoryPanel.list.SetSelection(0)
     self.on_category_changed(None)
 
   def on_add_category(self, e):
-    self.deck.add_category(str(self.categoryPanel.txtNew.GetValue()).capitalize())
     self.cardPanel.list.Clear()
     e.Skip() # To allow event handling to continue in the SemiPanel.
 
   def on_add_card(self, e):
     category = self.categoryPanel.list.GetString(self.categoryPanel.list.GetSelection())
     category = str(category)
-    self.deck.add_card(category, str(self.cardPanel.txtNew.GetValue()).capitalize())
+    name = str(self.cardPanel.txtNew.GetValue()).capitalize()
+    self.deck.append(clueCard(category, name))
     e.Skip() # To allow event handling to continue in the SemiPanel.
 
   def on_done(self, e):
-    # Make sure no categories are empty
-    for category in self.deck.categories:
-      if len(self.deck.get_cards_by_category(category)) == 0:
-        wx.MessageBox("Category {} cannot be empty.".format(category))
-        return
-
     path = self.txtPath.GetValue()
-    self.deck.save(path)
+    self.deck.export(path)
 
 class SemiPanel(wx.Panel):
 
