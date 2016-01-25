@@ -3,11 +3,11 @@ from deck import clueDeck
 class cluePlayer(object):
 	'''Represents a player in the clue game.'''
 
-	def __init__(self, name, numCards):
+	def __init__(self, name):
 
 		self.name = str(name)
-		self.numCards = numCards
+		self.numCards = None
 		self.disproofs = []
-		self.has = clueDeck() # Cards the player has
-		self.hasnt = clueDeck() # Cards the player doesn't have
+		self.has   = [] # Cards the player has
+		self.hasnt = [] # Cards the player doesn't have
 

@@ -4,33 +4,35 @@ import xml.etree.ElementTree as ET
 
 class clueGame(object):
 
-  def __init__(self, playerNames, numUserPlayer, deckPath = None):
+  def __init__(self, players, userPlayer, deck = None):
 
-    #Calculate the number of players
-    numPlayers = len(playerNames)
+    # Set up players
+    if len(players) > 0:
+      self.players = players
+    else:
+      raise ValueError("Player list cannot be empty.")
 
     # Load the deck
-    if deckPath == None:
+    if deck == None:
       self.deck = get_standard_deck()
     else:
-      self.deck = clueDeck(deckPath)
+      self.deck = deck
 
     # Determine how many cards each player gets
-    minCardsPerHand = (len(self.deck) - len(self.deck.categories)) // numPlayers
-    playersWithExtraCard = (len(self.deck) - len(self.deck.categories)) % numPlayers
-
-    # Create the players list
-    self.players = []
+    minCardsPerHand = (len(self.deck) - len(self.deck.categories)) // len(players)
+    playersWithExtraCard = (len(self.deck) - len(self.deck.categories)) % len(players)
     
-    for i in range(len(playerNames)):
-      numCards = minCardsPerHand + 1 if i < playersWithExtraCard else minCardsPerHand
-      self.players.append(cluePlayer(playerNames[i], numCards))
+    for player in self.players:
+      if self.players.index(player) < playersWithExtraCard:
+        player.numCards = minCardsPerHand + 1 
+      else:
+        player.numCards = minCardsPerHand
     
     # Validate the user player
-    if numUserPlayer >= 0 and numUserPlayer < numPlayers:
-      self.userPlayer = self.players[numUserPlayer]
+    if userPlayer in self.players:
+      self.userPlayer = userPlayer
     else:
-      raise ValueError("userPlayer must be between 0 and number of players (currently {}).".format(numPlayers))
+      raise ValueError("userPlayer must be a player in the current game.")
 
     # Final initializing
     self.currentPlayer = self.players[0]
@@ -290,7 +292,7 @@ class clueGame(object):
     # Export Turns
     historyElement = ET.Element('history')
     for turn in self.history: #TODO Presumably manual calls to new_info should get some kind of entry in history
-      turnElement = ET.Element('turn')
+      turnElement = ET.Element('turn')  # And there is a diferent special_info wrapper method tha also adds a line to the history.
       for key, value in turn.items():
         pairElement = ET.Element(key)
         if value is not None:
@@ -299,8 +301,8 @@ class clueGame(object):
               cardElement = ET.Element('card')
               cardElement.text = card.name
               pairElement.append(cardElement)
-          else:
-            # same .name syntax works for guesser, disprover, and card
+          elif key != 'guesser': # Don't need to save guesser info.
+            # same .name syntax works for disprover, and card
             pairElement.text = value.name
         turnElement.append(pairElement)
       historyElement.append(turnElement)
@@ -325,10 +327,53 @@ def import_game(gamePath):
   '''
   Returns a game which is restored from a file.
   '''
-  pass  
-  # As we're reading the file in we should store a dict (not list) of players
-  # So that when we are recreating the game history, we can reference the players by string name.
-  # Do likewise for cards by NAME
+  
+  tree = ET.parse(gamePath)
+  gameElement = tree.getroot()
+  
+  # Get the player information from the file
+  players = []
+  for playerElement in gameElement.find('players'):
+    name = playerElement.text
+    players.append(cluePlayer(name))
+    if 'user' in playerElement.attrib:
+      userPlayer = players[-1]
+      
+  # Create the deck
+  deck = clueDeck(gameElement.find('deck'))
+            
+  # Create the game
+  game = clueGame(players, userPlayer, deck)
+   
+  # Populate the user hand
+  for cardElement in gameElement.findall('./userhand/category/card'):
+    game.new_info(userPlayer, deck.get_card_by_name(cardElement.text), True)
+          
+  # Now recalculate the game table from the history
+  for turnElement in gameElement.find('history'):
+    # The guess
+    guess = []
+    for cardElement in turnElement.find('guess'):
+      guess.append(game.deck.get_card_by_name(cardElement.text))
+    # The disprover
+    disprover = None
+    for player in players:
+      if player.name == turnElement.find('disprover').text:
+        disprover = player
+    # The card seen
+    cardName = turnElement.find('cardSeen').text
+    if cardName is None:
+      cardSeen = None
+    else:
+      cardSeen = game.deck.get_card_by_name(cardName)
+    
+    # Take or pass the turn
+    if guess == []:
+      game.pass_turn()
+    else:
+      game.take_turn(guess, disprover, cardSeen = None)
+  
+  return game
   
   
   

@@ -4,20 +4,16 @@ class clueDeck(list):
   '''
   Represents a deck of cards in the clue game.
   '''
-  def __init__(self, deckPath = None):
+  def __init__(self, deckElement = None):
     
     self.categories = []
     
-    if deckPath is not None:      
-      # Try to read a deck XML file
-      with open(deckPath, 'r') as deckFile:
-        deckTree = ET.parse(deckFile)
-        
-        for categoryElement in deckTree.findall('category'):
-          self.categories.append(categoryElement.get('name'))
-          for cardElement in categoryElement.findall('card'):
-            newCard = clueCard(categoryElement.get('name'), cardElement.text)
-            self.append(newCard)
+    if deckElement is not None:        
+      for categoryElement in deckElement.findall('category'):
+        self.categories.append(categoryElement.get('name'))
+        for cardElement in categoryElement.findall('card'):
+          newCard = clueCard(categoryElement.get('name'), cardElement.text)
+          self.append(newCard)
 
 
   def append(self, card):
@@ -27,7 +23,8 @@ class clueDeck(list):
       raise TypeError("Only clue cards may be added to clue decks.")
     
     if card.category not in self.categories:
-      self.categories.append(card.category)  
+      raise ValueError("Category not in deck.")
+        
     list.append(self, card) #TODO Should I be using super?
 
 
@@ -46,6 +43,11 @@ class clueDeck(list):
         cards.append(card)
 
     return cards
+    
+  def get_card_by_name(self, name):
+    for card in self:
+      if card.name == name:
+        return card
 
   def export(self, path = None):
   
@@ -91,6 +93,8 @@ class clueCard(object):
     
 def get_standard_deck():
   sd = clueDeck()
+  
+  sd.categories = ["Room", "Weapon", "Suspect"]
   
   sd.append(clueCard("Room", "Kitchen"))
   sd.append(clueCard("Room", "Ballroom"))
