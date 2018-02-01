@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<game>
+  <players>
+    <player user="True">Joshy</player>
+    <player>Mom</player>
+    <player>Punk</player>
+  </players>
+  <deck>
+    <category name="Room">
+      <card>Kitchen</card>
+      <card>Ballroom</card>
+      <card>Conservatory</card>
+      <card>Billiard Rood</card>
+      <card>Library</card>
+      <card>Study</card>
+      <card>Hall</card>
+      <card>Lounge</card>
+      <card>Dining Room</card>
+    </category>
+    <category name="Weapon">
+      <card>Candlestick</card>
+      <card>Knife</card>
+      <card>Lead Pipe</card>
+      <card>Revolver</card>
+      <card>Rope</card>
+      <card>Wrench</card>
+    </category>
+    <category name="Suspect">
+      <card>Miss Scarlet</card>
+      <card>Prof. Plum</card>
+      <card>Mrs. Peacock</card>
+      <card>Mr. Green</card>
+      <card>Col. Mustard</card>
+      <card>Mrs. White</card>
+    </category>
+  </deck>
+  <userhand>
+    <category name="Room">
+      <card>Kitchen</card>
+      <card>Conservatory</card>
+      <card>Library</card>
+      <card>Dining Room</card>
+    </category>
+    <category name="Weapon">
+      <card>Candlestick</card>
+      <card>Knife</card>
+    </category>
+  </userhand>
+  <history>
+    <turn>
+      <disprover/>
+      <guess/>
+      <cardSeen/>
+    </turn>
+    <turn>
+      <disprover/>
+      <guess/>
+      <cardSeen/>
+    </turn>
+    <turn>
+      <disprover>Mom</disprover>
+      <guess>
+        <card>Ballroom</card>
+        <card>Knife</card>
+        <card>Miss Scarlet</card>
+      </guess>
+      <cardSeen/> 
+    </turn>
+    <turn>
+      <disprover/>
+      <guess/>
+      <cardSeen/>
+    </turn>
+  </history>
+</game>
+
+
