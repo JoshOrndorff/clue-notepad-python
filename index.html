@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Clue Notepad</title>
+  <script src="ui.js" type="text/Javascript"></script>
+</head>
+
+<body>
+  <div id="instructions">
+    <h1>Instructions</h1>
+    <p>Welcome to the Clue notepad! I'll help you know what to do.</p>
+    <ol>
+      <li class="active">Enter player names (max six, dealer first)</li>
+      <li class="inactive">Tell me who you are</li>
+      <li class="inactive">Take a turn</li>
+    </ol>
+  </div>
+  <div id="init">
+    <h1>Choose Players</h1>
+    <table id="players">
+      <tr>
+        <th>Player</th>
+        <th>Me</th>
+      </tr>
+      <tr id="template">
+        <td><input class="pname" type="text" placeholder="template" /></td>
+        <td><input class="me" type="radio" name="me" disabled="true" /></td>
+      </tr>
+    </table>
+    <button id="continue" type="button">Continue</button>
+  </div>
+</body>
+</html>
